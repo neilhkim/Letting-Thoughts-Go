@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Passing thoughts - Meditation</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f9e0d9;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+            background: linear-gradient(to right, #f9e0d9, #d9f9f0, #e0d9f9, #f9d9d9);
+            background-size: 400% 400%;
+            animation: gradient 10s ease infinite;
+        }
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .title {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            z-index: 4;
+        }
+        
+        .title h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        
+        #thoughtArea {
+            position: relative;
+            width: 80%;
+            text-align: center;
+            z-index: 3;
+        }
+        
+        #inputText {
+            border: none;
+            outline: none;
+            background: none;
+            font-size: 24px;
+            text-align: center;
+            width: 100%;
+            caret-color: black;
+            position: relative;
+            z-index: 3;
+        }
+        
+        #breathBall {
+            position: absolute;
+            width: 5vw;
+            height: 5vw;
+            background-color: white;
+            border-radius: 50%;
+            animation: breathing 10s ease-in-out infinite;
+            transform-origin: center;
+            z-index: 1;
+        }
+        
+        @keyframes breathing {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(10);
+            }
+        }
+        
+        #pausePlayButton:hover {
+            background-color: #e0e0e0;
+            transform: translateX(-50%) scale(1.02);
+        }
+
+        .thought {
+            font-size: 24px;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+        }
+    </style>
+<iframe id="youtubeAudio" width="0" height="0" src="https://www.youtube.com/embed/GXF8jRZ2_8M?autoplay=1&loop=1&playlist=FMr_DNQr2aI" frameborder="0" allow="autoplay" allowfullscreen style="position: absolute; left: -9999px;"></iframe>
+</head>
+    
+<body onload="document.getElementById('inputText').focus();">
+    <div class="title" style="white-space: nowrap;">
+        <h1>Passing thoughts - Meditation</h1>
+        <div id="musicStatus" style="font-size: 10px; color: black; margin-top: 5px; cursor: pointer;">Turn on music</div>
+    </div>
+    
+    <div id="thoughtArea">
+        <input id="inputText" type="text">
+        <div id="thoughtsContainer"></div>
+    </div>
+    
+    <div id="breathBall"></div>
+    
+    
+    <div style="font-size: 10px; color: black; position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%); white-space: nowrap; z-index: 5;">Press p for pause/play</div>
+    <div style="font-size: 10px; color: black; position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); white-space: nowrap; z-index: 5;">But don't pause, let them go.</div>
+    <div style="font-size: 8px; color: black; position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); white-space: nowrap; z-index: 5;">Neil Kim - last modified: 2024-10-20</div>
+
+    <script>
+        let isPaused = false;
+        const inputText = document.getElementById('inputText');
+        const thoughtsContainer = document.getElementById('thoughtsContainer');
+        const breathBall = document.getElementById('breathBall');
+
+        inputText.addEventListener('input', () => {
+            // Clear existing timeout and start a new timer each time the user starts typing
+            clearTimeout(inputText.typingTimeout);
+            const delay = (inputText.value.endsWith(' ') || inputText.value.endsWith('.') || inputText.value.endsWith(',')) ? 700 : 5000;
+            inputText.typingTimeout = setTimeout(() => {
+                if (inputText.value !== '') {
+                    inputText.dispatchEvent(new KeyboardEvent('keydown', { 'key': 'Enter' }));
+                }
+            }, delay);
+        });
+        
+inputText.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' && inputText.value.length > 0) { // Keep any spaces or trailing characters
+                clearTimeout(inputText.typingTimeout); // Clear the timeout if Enter is pressed
+
+                const thought = document.createElement('div');
+                thought.className = 'thought';
+                thought.innerHTML = inputText.value.replace(/ /g, '&nbsp;'); // Preserve spaces, use value as-is
+                thought.style.fontSize = window.getComputedStyle(inputText).fontSize;
+                thought.style.top = `${inputText.offsetTop}px`;
+                thoughtsContainer.appendChild(thought);
+                inputText.value = '';
+
+
+                //const randomAngle = 0.5 + (Math.random() - 0.5) * Math.PI * 0.7; // Random angle upwards
+		const randomAngle = Math.PI * (0.5 + (Math.random() - 0.5) * 0.7)
+                thought.dataset.driftAngle = randomAngle; // Store the random angle
+                console.log('Triggering fadeAwayThought for:', thought.innerHTML);
+                fadeAwayThought(thought); // Start moving immediately after Enter is pressed
+            }
+        });
+
+        function fadeAwayThought(thought) {
+            const duration = 40000;
+            
+            // Cache commonly used values
+            const startPosY = thought.offsetTop;
+            const driftAngle = parseFloat(thought.dataset.driftAngle);
+            const driftDistance = window.innerHeight * 0.30;
+            const driftDistanceX = Math.cos(driftAngle) * driftDistance;
+            const driftDistanceY = -Math.abs(Math.sin(driftAngle) * driftDistance);
+            
+            thought.dataset.startPosY = startPosY;
+            thought.dataset.driftDistanceX = driftDistanceX;
+            thought.dataset.driftDistanceY = driftDistanceY;
+            thought.dataset.progress = 0;
+            thought.dataset.weightedProgress = 0;
+            thought.dataset.timeSpentMoving = 0;
+            
+            function drift(timestamp) {
+                console.log('Drift function called for:', thought.innerHTML);
+                if (!thought.dataset.lastMoveStartTime) {
+                    thought.dataset.lastMoveStartTime = timestamp;
+                }
+                if (isPaused || thought.dataset.lastMoveStopTime) {
+                    requestAnimationFrame(drift);
+                    return;
+                }
+                
+                // Calculate progress
+                const elapsed = timestamp - parseFloat(thought.dataset.lastMoveStartTime);
+                thought.dataset.progress = parseFloat(thought.dataset.timeSpentMoving) + (elapsed / duration);
+
+                // Adjust the ending condition to prevent early disappearance
+                if (thought.dataset.progress >= 0.99) {
+                    thoughtsContainer.removeChild(thought);
+                    return;
+                }
+
+                // Weighted progress for easing effect
+                const weightedProgress = 1 - Math.exp(-12 * thought.dataset.progress);
+                const weightedProgress2 = 1 - Math.exp(-12 * thought.dataset.progress);
+                const currentPosY = startPosY + driftDistanceY * weightedProgress;
+                const currentPosX = driftDistanceX * weightedProgress;
+
+                // Apply styles for position and opacity
+                thought.style.transform = `translate(calc(-50% + ${currentPosX}px), ${currentPosY - startPosY}px)`;
+                thought.style.opacity = 1 - weightedProgress2;
+                //thought.style.opacity = 1 - thought.dataset.progress;
+
+                requestAnimationFrame(drift);
+            }
+
+            requestAnimationFrame(drift);
+        }
+        
+        function pauseAnimations() {
+            breathBall.style.animationPlayState = 'paused';
+        }
+        
+        function playAnimations() {
+            breathBall.style.animationPlayState = 'running';
+        }
+        
+        document.getElementById('pausePlayButton').addEventListener('click', () => {
+            const currentTime = Date.now();
+            document.querySelectorAll('.thought').forEach(thought => {
+                if (isPaused) {
+                    thought.dataset.lastMoveStopTime = currentTime;
+                    thought.dataset.lastMoveStartTime = null;
+                } else {
+                    thought.dataset.lastMoveStartTime = currentTime;
+                    thought.dataset.lastMoveStopTime = null;
+                }
+            });
+            isPaused = !isPaused;
+            if (isPaused) {
+                pauseAnimations();
+            } else {
+                playAnimations();
+                document.querySelectorAll('.thought').forEach(thought => {
+                    if (thought.style.opacity !== '0') {
+                        const progress = 1 - parseFloat(thought.style.opacity);
+                        fadeAwayThought(thought, progress);
+                    }
+                });
+            }
+        });
+    </script>
+    <script>
+        let isMusicPlaying = false;
+        const musicStatus = document.getElementById('musicStatus');
+        const youtubeAudio = document.getElementById('youtubeAudio');
+
+        musicStatus.addEventListener('click', () => {
+            if (isMusicPlaying) {
+                youtubeAudio.src = '';
+                musicStatus.textContent = 'Turn on music';
+            } else {
+                youtubeAudio.src = 'https://www.youtube.com/embed/GXF8jRZ2_8M?autoplay=1&loop=1&playlist=GXF8jRZ2_8M';
+                musicStatus.textContent = 'Turn off music';
+            }
+            isMusicPlaying = !isMusicPlaying;
+        });
+    </script>
+</body>
+</html>
