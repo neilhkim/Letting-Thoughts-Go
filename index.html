@@ -77,10 +77,6 @@
             }
         }
         
-        #pausePlayButton:hover {
-            background-color: #e0e0e0;
-            transform: translateX(-50%) scale(1.02);
-        }
 
         .thought {
             font-size: 24px;
@@ -107,12 +103,9 @@
     <div id="breathBall"></div>
     
     
-    <div style="font-size: 10px; color: black; position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%); white-space: nowrap; z-index: 5;">Press p for pause/play</div>
-    <div style="font-size: 10px; color: black; position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); white-space: nowrap; z-index: 5;">But don't pause, let them go.</div>
     <div style="font-size: 8px; color: black; position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); white-space: nowrap; z-index: 5;">Neil Kim - last modified: 2024-10-20</div>
 
     <script>
-        let isPaused = false;
         const inputText = document.getElementById('inputText');
         const thoughtsContainer = document.getElementById('thoughtsContainer');
         const breathBall = document.getElementById('breathBall');
@@ -171,10 +164,6 @@ inputText.addEventListener('keydown', (event) => {
                 if (!thought.dataset.lastMoveStartTime) {
                     thought.dataset.lastMoveStartTime = timestamp;
                 }
-                if (isPaused || thought.dataset.lastMoveStopTime) {
-                    requestAnimationFrame(drift);
-                    return;
-                }
                 
                 // Calculate progress
                 const elapsed = timestamp - parseFloat(thought.dataset.lastMoveStartTime);
@@ -202,39 +191,7 @@ inputText.addEventListener('keydown', (event) => {
 
             requestAnimationFrame(drift);
         }
-        
-        function pauseAnimations() {
-            breathBall.style.animationPlayState = 'paused';
-        }
-        
-        function playAnimations() {
-            breathBall.style.animationPlayState = 'running';
-        }
-        
-        document.getElementById('pausePlayButton').addEventListener('click', () => {
-            const currentTime = Date.now();
-            document.querySelectorAll('.thought').forEach(thought => {
-                if (isPaused) {
-                    thought.dataset.lastMoveStopTime = currentTime;
-                    thought.dataset.lastMoveStartTime = null;
-                } else {
-                    thought.dataset.lastMoveStartTime = currentTime;
-                    thought.dataset.lastMoveStopTime = null;
-                }
-            });
-            isPaused = !isPaused;
-            if (isPaused) {
-                pauseAnimations();
-            } else {
-                playAnimations();
-                document.querySelectorAll('.thought').forEach(thought => {
-                    if (thought.style.opacity !== '0') {
-                        const progress = 1 - parseFloat(thought.style.opacity);
-                        fadeAwayThought(thought, progress);
-                    }
-                });
-            }
-        });
+
     </script>
     <script>
         let isMusicPlaying = false;
