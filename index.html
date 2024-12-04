@@ -86,13 +86,13 @@
             white-space: nowrap;
         }
     </style>
-<iframe id="youtubeAudio" width="0" height="0" src="https://www.youtube.com/embed/GXF8jRZ2_8M?autoplay=1&loop=1&playlist=FMr_DNQr2aI" frameborder="0" allow="autoplay" allowfullscreen style="position: absolute; left: -9999px;"></iframe>
 </head>
     
 <body onload="document.getElementById('inputText').focus();">
     <div class="title" style="white-space: nowrap;">
         <h1>Passing thoughts - Meditation</h1>
         <div id="musicStatus" style="font-size: 10px; color: black; margin-top: 5px; cursor: pointer;">Turn on music</div>
+        <div id="listeningStatus" style="font-size: 10px; color: black; margin-top: 5px; cursor: pointer;">Listen to my thoughts: not listening</div>
     </div>
     
     <div id="thoughtArea">
@@ -105,10 +105,16 @@
     
     <div style="font-size: 8px; color: black; position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); white-space: nowrap; z-index: 5;">Neil Kim - last modified: 2024-10-20</div>
 
+    <iframe id="youtubeAudio" width="0" height="0" src="" frameborder="0" allow="autoplay" allowfullscreen style="position: absolute; left: -9999px;"></iframe>
+
     <script>
         const inputText = document.getElementById('inputText');
         const thoughtsContainer = document.getElementById('thoughtsContainer');
         const breathBall = document.getElementById('breathBall');
+        const listeningStatus = document.getElementById('listeningStatus');
+
+        let isListening = false;
+        let savedThoughts = [];
 
         inputText.addEventListener('input', () => {
             // Clear existing timeout and start a new timer each time the user starts typing
@@ -121,7 +127,7 @@
             }, delay);
         });
         
-inputText.addEventListener('keydown', (event) => {
+        inputText.addEventListener('keydown', (event) => {
             if (event.key === 'Enter' && inputText.value.length > 0) { // Keep any spaces or trailing characters
                 clearTimeout(inputText.typingTimeout); // Clear the timeout if Enter is pressed
 
@@ -131,16 +137,48 @@ inputText.addEventListener('keydown', (event) => {
                 thought.style.fontSize = window.getComputedStyle(inputText).fontSize;
                 thought.style.top = `${inputText.offsetTop}px`;
                 thoughtsContainer.appendChild(thought);
+
+                if (isListening) {
+                    savedThoughts.push(inputText.value); // Save the input when listening
+                }
+
                 inputText.value = '';
 
-
-                //const randomAngle = 0.5 + (Math.random() - 0.5) * Math.PI * 0.7; // Random angle upwards
-		const randomAngle = Math.PI * (0.5 + (Math.random() - 0.5) * 0.7)
+                const randomAngle = Math.PI * (0.5 + (Math.random() - 0.5) * 0.7);
                 thought.dataset.driftAngle = randomAngle; // Store the random angle
                 console.log('Triggering fadeAwayThought for:', thought.innerHTML);
                 fadeAwayThought(thought); // Start moving immediately after Enter is pressed
             }
         });
+
+        listeningStatus.addEventListener('click', () => {
+            if (!isListening) {
+                listeningStatus.textContent = 'Listen to my thoughts: listening';
+                isListening = true;
+            } else {
+                listeningStatus.innerHTML = 'Listening ended: <span id="reviewThoughts" style="cursor: pointer; color: blue;">review</span> or <span id="discardThoughts" style="cursor: pointer; color: red;">discard</span>';
+                isListening = false;
+
+                document.getElementById('reviewThoughts').addEventListener('click', reviewThoughts);
+                document.getElementById('discardThoughts').addEventListener('click', discardThoughts);
+            }
+        });
+
+        function discardThoughts() {
+            savedThoughts = [];
+            listeningStatus.textContent = 'Listen to my thoughts: not listening';
+        }
+
+        function reviewThoughts() {
+            const reviewPopup = window.open("", "Review Thoughts", "width=400,height=300");
+            reviewPopup.document.write(`
+                <p>Review of Your Thoughts:</p>
+                <div style="max-height: 200px; overflow-y: auto; white-space: pre-wrap;">
+                    ${savedThoughts.join('<br>')}
+                </div>
+                <button onclick="window.close()">Close</button>
+            `);
+        }
 
         function fadeAwayThought(thought) {
             const duration = 40000;
@@ -184,7 +222,6 @@ inputText.addEventListener('keydown', (event) => {
                 // Apply styles for position and opacity
                 thought.style.transform = `translate(calc(-50% + ${currentPosX}px), ${currentPosY - startPosY}px)`;
                 thought.style.opacity = 1 - weightedProgress2;
-                //thought.style.opacity = 1 - thought.dataset.progress;
 
                 requestAnimationFrame(drift);
             }
